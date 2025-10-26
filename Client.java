@@ -23,7 +23,18 @@ public class Client {
 
     public static void main(String[] args) {
 
-        try (Socket server = new Socket(HOST, PORT);
+        Socket server = connectWithRetry(HOST, PORT, 3, 15000, 5000);
+        if (server == null) {
+            System.err.println("[ERROR] Unable to connect to server after 3 attempts.");
+            System.out.print("Press Enter to quit...");
+            try (Scanner sc = new Scanner(System.in)) {
+                sc.nextLine();
+            } catch (Exception ignored) {
+            }
+            return;
+        }
+
+        try (server;
                 PrintWriter out = new PrintWriter(server.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(server.getInputStream()));
                 Scanner scanner = new Scanner(System.in)) {
@@ -58,13 +69,35 @@ public class Client {
         }
     }
 
+    private static Socket connectWithRetry(String host, int port, int attempts, int timeout, int delay) {
+        for (int i = 1; i <= attempts; i++) {
+            try {
+                Socket s = new Socket();
+                s.connect(new InetSocketAddress(host, port), timeout);
+                System.out.println("[INFO] Connected to " + host + ":" + port + " on attempt " + i + "/" + attempts);
+                return s;
+            } catch (IOException e) {
+                System.err.println("[WARN] Connection attempt " + i + "/" + attempts + " failed: " + e.getMessage());
+                if (i < attempts) {
+                    System.out.println("[INFO] Retrying in " + (delay / 1000.0) + "s...");
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private static void handleListCategory(PrintWriter out, BufferedReader in, Scanner scanner) throws IOException {
         String label = """
-            Choose a category:
-            1) PROFESSOR
-            2) ASSISTANT
-            3) STUDENT
-            Your choice: """;
+                Choose a category:
+                1) PROFESSOR
+                2) ASSISTANT
+                3) STUDENT
+                Your choice: """;
 
         String category;
         do {
@@ -79,10 +112,11 @@ public class Client {
                 }
             };
         } while (category == null);
-        sendAndPrint(out, in,"getMembersFromCategory|" + category);
+        sendAndPrint(out, in, "getMembersFromCategory|" + category);
     }
 
-    private static void handleListProfessorsByDomain(PrintWriter out, BufferedReader in, Scanner scanner) throws IOException {
+    private static void handleListProfessorsByDomain(PrintWriter out, BufferedReader in, Scanner scanner)
+            throws IOException {
         String label = "Enter domain : ";
         String query = Util.prompt(scanner, label);
         sendAndPrint(out, in, "getTeachersByDomain|" + query);
@@ -93,20 +127,22 @@ public class Client {
         String query = Util.prompt(scanner, label);
         sendAndPrint(out, in, "search|" + query);
     }
-    
+
     private static void handleDelete(PrintWriter out, BufferedReader in, Scanner scanner) throws IOException {
         String label = "Delete by student ID for student or phone number if teacher: ";
         String query = Util.prompt(scanner, label);
         sendAndPrint(out, in, "delete|" + query);
     }
 
-    private static void handleRedlist(PrintWriter out, BufferedReader in, Scanner scanner, boolean add) throws IOException {
+    private static void handleRedlist(PrintWriter out, BufferedReader in, Scanner scanner, boolean add)
+            throws IOException {
         String action = add ? "add" : "remove";
-        String label = (add ? "Add to" : "Remove from") + " red list by student ID for student or phone number if teacher: ";
+        String label = (add ? "Add to" : "Remove from")
+                + " red list by student ID for student or phone number if teacher: ";
         String query = Util.prompt(scanner, label);
         sendAndPrint(out, in, action + "Redlist|" + query);
     }
-    
+
     private static void handleAdd(PrintWriter out, BufferedReader in, Scanner scanner) throws IOException {
         String type = askType(scanner);
 
@@ -136,15 +172,19 @@ public class Client {
 
     private static String askType(Scanner scanner) {
         String label = """
-            Choose type:
-            1) STUDENT
-            2) PROFESSOR
-            Your choice: """;
+                Choose type:
+                1) STUDENT
+                2) PROFESSOR
+                Your choice: """;
         while (true) {
             String c = Util.prompt(scanner, label);
             switch (c) {
-                case "1" -> { return "STUDENT"; }
-                case "2" -> { return "PROFESSOR"; }
+                case "1" -> {
+                    return "STUDENT";
+                }
+                case "2" -> {
+                    return "PROFESSOR";
+                }
                 default -> System.out.println("[ERROR] Please enter 1 or 2.");
             }
         }
@@ -152,20 +192,25 @@ public class Client {
 
     private static String askCategory(Scanner scanner) {
         String label = """
-            Choose category:
-            1) PROFESSOR
-            2) ASSISTANT
-            Your choice: """;
+                Choose category:
+                1) PROFESSOR
+                2) ASSISTANT
+                Your choice: """;
         while (true) {
             String c = Util.prompt(scanner, label);
             switch (c) {
-                case "1" -> { return Category.PROFESSOR.name(); }
-                case "2" -> { return Category.ASSISTANT.name(); }
+                case "1" -> {
+                    return Category.PROFESSOR.name();
+                }
+                case "2" -> {
+                    return Category.ASSISTANT.name();
+                }
                 default -> System.out.println("[ERROR] Please enter 1 or 2.");
             }
         }
     }
 
+    @SuppressWarnings("unused")
     private static void printUpdateMenu(String type) {
         System.out.println("Select a field to update: ");
         if ("STUDENT".equals(type)) {
@@ -186,6 +231,7 @@ public class Client {
         }
     }
 
+    @SuppressWarnings("unused")
     private static String fieldKeyFromChoice(String type, String choice) {
         if ("STUDENT".equals(type)) {
             return switch (choice) {
@@ -208,7 +254,6 @@ public class Client {
             };
         }
     }
-
 
     private static void sendAndPrint(PrintWriter out, BufferedReader in, String req) throws IOException {
         out.println(req);
