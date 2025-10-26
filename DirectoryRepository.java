@@ -93,7 +93,16 @@ public class DirectoryRepository {
         List<Contact> out = new ArrayList<>();
         switch (category) {
             case STUDENT -> out.addAll(students);
-            case PROFESSOR, ASSISTANT -> out.addAll(professors);
+            case PROFESSOR -> {
+                for (Professor p : professors) {
+                    if (p.getCategory() == Category.PROFESSOR) out.add(p);
+                }
+            }
+            case ASSISTANT -> {
+                for (Professor p : professors) {
+                    if (p.getCategory() == Category.ASSISTANT) out.add(p);
+                }
+            }
             default -> {
             }
         }
