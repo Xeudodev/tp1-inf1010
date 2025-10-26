@@ -158,4 +158,77 @@ public class DirectoryRepository {
 
         return false;
     }
+
+    public synchronized boolean updateStudent(String currentId, Map<String, String> changes) {
+        Student target = null;
+        for (Student s : students) {
+            if (s.getStudentId() != null && s.getStudentId().equalsIgnoreCase(currentId)) {
+                target = s; break; // found
+            }
+        }
+        if (target == null) return false;
+
+        if (changes.containsKey("studentId")) { 
+            String newId = changes.get("studentId");
+            Contact existing = searchByIdentifier(newId);
+            
+            if (existing != null && existing != target) return false;
+            
+            String oldId = target.getStudentId();
+            target.setStudentId(newId);
+
+            if (oldId != null && redlist.remove(oldId)) {
+                redlist.add(newId);
+            }
+        }
+
+        if (changes.containsKey("firstName")) target.setFirstName(changes.get("firstName"));
+        if (changes.containsKey("lastName")) target.setLastName(changes.get("lastName"));
+        if (changes.containsKey("email")) target.setEmail(changes.get("email"));
+        if (changes.containsKey("domain")) target.setDomain(changes.get("domain"));
+
+        return true;
+    }
+
+    public synchronized boolean updateProfessor(String currentPhone, Map<String, String> changes) {
+        Professor target = null;
+        for (Professor p : professors) {
+            if (p.getOfficePhone() != null && p.getOfficePhone().equalsIgnoreCase(currentPhone)) {
+                target = p; break;
+            }
+        }
+        if (target == null) return false;
+
+        if (changes.containsKey("officePhone")) {
+            String newPhone = changes.get("officePhone");
+            Contact existing = searchByIdentifier(newPhone);
+
+            if (existing != null && existing != target) return false;
+
+            String oldPhone = target.getOfficePhone();
+            target.setOfficePhone(newPhone);
+
+            if (oldPhone != null && redlist.remove(oldPhone)) {
+                redlist.add(newPhone);
+            }
+        }
+
+        if (changes.containsKey("firstName")) target.setFirstName(changes.get("firstName"));
+        if (changes.containsKey("lastName")) target.setLastName(changes.get("lastName"));
+        if (changes.containsKey("email")) target.setEmail(changes.get("email"));
+        if (changes.containsKey("domain")) target.setDomain(changes.get("domain"));
+
+        if (changes.containsKey("category")) {
+            String category = changes.get("category");
+            try {
+                Category c = Category.valueOf(category.toUpperCase());
+                if (c == Category.STUDENT) return false; // cannot set professor to student because of identifier type
+                target.setCategory(c);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

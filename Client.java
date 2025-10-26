@@ -1,4 +1,6 @@
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.io.*;
 
@@ -180,7 +182,63 @@ public class Client {
         if (!isAdmin(out, in, scanner)) {
             return;
         }
-        throw new UnsupportedOperationException("Not implemented yet.");
+
+        String type = askType(scanner);
+
+        String label = "STUDENT".equals(type)
+                ? "Enter student ID associated with the record to modify: "
+                : "Enter the office phone associated with the record to modify: ";
+        String identifier = Util.prompt(scanner, label);
+
+        System.out.println("[INFO] Current record:");
+        sendAndPrint(out, in, "search|" + identifier);
+
+        List<String> changes = new ArrayList<>();
+        boolean done = false;
+        while (!done) {
+            printUpdateMenu(type);
+            String choice = Util.prompt(scanner, "Your choice: ");
+            if ("9".equalsIgnoreCase(choice)) {
+                done = true;
+                break;
+            }
+            String field = fieldKeyFromChoice(type, choice);
+            if (field == null) {
+                System.out.println("[ERROR] Invalid choice.");
+                continue;
+            }
+            String prompt = switch (field) {
+                case "firstName" -> "New first name: ";
+                case "lastName" -> "New last name: ";
+                case "studentId" -> "New student ID: ";
+                case "email" -> "New email: ";
+                case "domain" -> "New domain: ";
+                case "category" -> "New category (PROFESSOR or ASSISTANT): ";
+                case "officePhone" -> "New office phone: ";
+                default -> "New value: ";
+            };
+            String value = Util.prompt(scanner, prompt);
+            if ("category".equals(field)) {
+                if (!"PROFESSOR".equalsIgnoreCase(value) && !"ASSISTANT".equalsIgnoreCase(value)) {
+                    System.out.println("[ERROR] Category must be PROFESSOR or ASSISTANT.");
+                    continue;
+                }
+                value = value.toUpperCase();
+            }
+            changes.add(field + "=" + value);
+        }
+
+        if (changes.isEmpty()) {
+            System.out.println("[INFO] No changes to apply.");
+            return;
+        }
+
+        StringBuilder req = new StringBuilder();
+        req.append("update|").append(type).append("|").append(identifier);
+        for (String c : changes) {
+            req.append("|").append(c);
+        }
+        sendAndPrint(out, in, req.toString());
     }
 
     private static String askType(Scanner scanner) {
@@ -224,17 +282,16 @@ public class Client {
     }
 
     private static boolean isAdmin(PrintWriter out, BufferedReader in, Scanner scanner) throws IOException {
-        String query = Util.prompt(scanner, "Enter admin password to add a member: ");
+        String query = Util.prompt(scanner, "Enter admin password: ");
         boolean isAuthorized = sendAndValidate(out, in, "auth|" + query);
 
         if (!isAuthorized) {
-            System.out.println("[ERROR] Authorization failed. Cannot add member.");
+            System.out.println("[ERROR] Authorization failed.");
             return false;
         }
         return true;
     }
 
-    @SuppressWarnings("unused")
     private static void printUpdateMenu(String type) {
         System.out.println("Select a field to update: ");
         if ("STUDENT".equals(type)) {
@@ -243,7 +300,7 @@ public class Client {
             System.out.println("3) studentId");
             System.out.println("4) email");
             System.out.println("5) domain");
-            System.out.println("q) Done");
+            System.out.println("9) Done");
         } else {
             System.out.println("1) firstName");
             System.out.println("2) lastName");
@@ -251,11 +308,10 @@ public class Client {
             System.out.println("4) email");
             System.out.println("5) officePhone");
             System.out.println("6) domain");
-            System.out.println("q) Done");
+            System.out.println("9) Done");
         }
     }
 
-    @SuppressWarnings("unused")
     private static String fieldKeyFromChoice(String type, String choice) {
         if ("STUDENT".equals(type)) {
             return switch (choice) {

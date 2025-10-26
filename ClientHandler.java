@@ -3,6 +3,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 class ClientHandler implements Runnable {
     private final Socket socket;
@@ -36,6 +42,7 @@ class ClientHandler implements Runnable {
                     case "search" -> handleSearch(arguments, out);
                     case "add" -> handleAdd(arguments, out);
                     case "delete" -> handleDelete(arguments, out);
+                    case "update" -> handleUpdate(arguments, out);
                     case "addRedlist" -> handleRedlist(arguments, out, true);
                     case "removeRedlist" -> handleRedlist(arguments, out, false);
                     case "auth" -> handleAuthentication(arguments, out);
@@ -188,6 +195,82 @@ class ClientHandler implements Runnable {
                 boolean operationSucceeded = repo.redlistRemove(id);
                 out.println(operationSucceeded ? "[INFO] Member removed from the redlist." : "[ERROR] Failed to remove from the redlist.");
             }
+        }
+        out.println("END");
+    }
+
+    private void handleUpdate(String[] arguments, PrintWriter out) {
+        String type = arguments[1].trim().toUpperCase();
+        String id = arguments[2].trim();
+
+        var repo = DirectoryRepository.getInstance();
+        Contact contact = repo.searchByIdentifier(id);
+        if (contact == null) {
+            out.println("[ERROR] Member not found: " + id);
+            out.println("END");
+            return;
+        }
+
+        boolean typeAllowed = ("STUDENT".equals(type) && contact instanceof Student) ||
+                         ("PROFESSOR".equals(type) && contact instanceof Professor);
+        if (!typeAllowed) {
+            out.println("[ERROR] Type invalid for the identifier: " + id);
+            out.println("END");
+            return;
+        }
+
+        Map<String, String> changes = new HashMap<>();
+        for (int i = 3; i < arguments.length; i++) {
+            String arg = arguments[i];
+            int identifier = arg.indexOf('=');
+            if (identifier <= 0) {
+                out.println("[WARN] Ignoring invalid token: " + arg);
+                continue;
+            }
+            String key = arg.substring(0, identifier).trim();
+            String value = arg.substring(identifier + 1).trim();
+            changes.put(key, value);
+        }
+
+        if (changes.isEmpty()) {
+            out.println("[ERROR] No valid changes provided.");
+            out.println("END");
+            return;
+        }
+
+        Set<String> allowed;
+        if ("STUDENT".equals(type)) {
+            allowed = new HashSet<>(Arrays.asList(
+                "firstName","lastName","studentId","email","domain"
+            ));
+        } else if ("PROFESSOR".equals(type)) {
+            allowed = new HashSet<>(Arrays.asList(
+                "firstName","lastName","category","email","officePhone","domain"
+            ));
+        } else {
+            out.println("[ERROR] Unknown type: " + type);
+            out.println("END");
+            return;
+        }
+
+        for (String k : new ArrayList<>(changes.keySet())) {
+            if (!allowed.contains(k)) {
+                out.println("[WARN] Ignoring unknown field: " + k);
+                changes.remove(k);
+            }
+        }
+
+        boolean operationSucceeded;
+        if ("STUDENT".equals(type)) {
+            operationSucceeded = repo.updateStudent(id, changes);
+        } else {
+            operationSucceeded = repo.updateProfessor(id, changes);
+        }
+
+        if (operationSucceeded) {
+            out.println("[INFO] Member updated.");
+        } else {
+            out.println("[ERROR] Update failed.");
         }
         out.println("END");
     }
