@@ -137,7 +137,17 @@ class ClientHandler implements Runnable {
     }
 
     private void handleSearch(String[] arguments, PrintWriter out) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String id = arguments[1].trim();
+        var repo = DirectoryRepository.getInstance();
+        Contact contact = repo.searchByIdentifier(id);
+        if (contact == null) {
+            out.println("[INFO] Member not found: " + id);
+        } else if (repo.isRedlisted(contact)) {
+            out.println(contact.getFirstName() + " " + contact.getLastName() + " [RED LIST]");
+        } else {
+            out.println(contact.toString());
+        }
+        out.println("END");
     }
 
     private void handleDelete(String[] arguments, PrintWriter out) {
