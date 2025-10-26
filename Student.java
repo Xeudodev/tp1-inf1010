@@ -50,7 +50,7 @@ public class Student implements Contact {
 
     @Override
     public void setOfficePhone(String officePhone) {
-        throw new UnsupportedOperationException("Un étudiant ne possède pas de téléphone de bureau");
+        throw new UnsupportedOperationException("A student does not have an office phone.");
     }
 
     @Override

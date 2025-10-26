@@ -38,7 +38,7 @@ public class Professor implements Contact {
 
     @Override
     public void setStudentId(String studentId) {
-        throw new UnsupportedOperationException("Un professeur ne possède pas d'identifiant étudiant");
+        throw new UnsupportedOperationException("A professor does not have a student ID.");
     }
 
     @Override
