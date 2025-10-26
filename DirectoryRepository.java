@@ -140,4 +140,22 @@ public class DirectoryRepository {
         }
         return out;
     }
+
+    public synchronized boolean deleteByIdentifier(String id) {
+        boolean removedStudent = students.removeIf(s ->
+                s.getStudentId() != null && s.getStudentId().equalsIgnoreCase(id));
+        if (removedStudent) {
+            redlist.remove(id);
+            return true;
+        }
+
+        boolean removedProfessor = professors.removeIf(p ->
+                p.getOfficePhone() != null && p.getOfficePhone().equalsIgnoreCase(id));
+        if (removedProfessor) {
+            redlist.remove(id);
+            return true;
+        }
+
+        return false;
+    }
 }

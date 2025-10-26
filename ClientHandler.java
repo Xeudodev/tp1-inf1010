@@ -151,7 +151,15 @@ class ClientHandler implements Runnable {
     }
 
     private void handleDelete(String[] arguments, PrintWriter out) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String id = arguments[1].trim();
+        var repo = DirectoryRepository.getInstance();
+        boolean operationSucceeded = repo.deleteByIdentifier(id);
+        if (operationSucceeded) {
+            out.println("[INFO] Member deleted: " + id);
+        } else {
+            out.println("[ERROR] Member not found: " + id);
+        }
+        out.println("END");
     }
 
     private void handleRedlist(String[] arguments, PrintWriter out, boolean add) {
