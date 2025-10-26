@@ -1,7 +1,12 @@
-# TP1 INF1010
+# TP1 INF1010 - UQTR
+
+> [!NOTE]
+>
+> [Repo Github](https://github.com/Xeudodev/tp1-inf1010/)
 
 Une petite application client/serveur en Java qui gère un répertoire universitaire (étudiants, professeurs, assistants) via des sockets TCP.
-Le serveur conserve les données ; un ou plusieurs clients se connectent, envoient des commandes et reçoivent des réponses.
+
+Le serveur conserve les données pendant l'éxécution; un ou plusieurs clients se connectent, envoient des commandes et reçoivent des réponses.
 
 ## Exigences
 
@@ -26,13 +31,13 @@ Depuis le répertoire racine du projet (où se trouvent les fichiers `.java`) :
 
 Windows (CMD ou PowerShell) :
 
-```
+```sh
 javac -d . *.java
 ```
 
 Linux :
 
-```
+```sh
 javac -d . *.java
 ```
 
@@ -44,13 +49,13 @@ Cette commande compile toutes les sources dans le répertoire courant (package p
 
 Windows (CMD/PowerShell) :
 
-```
+```sh
 java Server
 ```
 
 Linux :
 
-```
+```sh
 java Server
 ```
 
@@ -64,7 +69,7 @@ java Client
 
 Linux :
 
-```
+```sh
 java Client
 ```
 
