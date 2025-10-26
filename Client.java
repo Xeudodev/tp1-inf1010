@@ -284,12 +284,8 @@ public class Client {
         String line;
         System.out.println("[INFO] Start of the server response");
         while ((line = in.readLine()) != null) {
-            if ("END".equals(line))
-                break;
+            if ("END".equals(line)) break;
             System.out.println(line);
-            // si le serveur ne termine pas par END et répond une seule ligne, on sort
-            if (!in.ready())
-                break;
         }
         System.out.println("[INFO] End of the server response");
     }
@@ -297,14 +293,16 @@ public class Client {
     private static boolean sendAndValidate(PrintWriter out, BufferedReader in, String req) throws IOException {
         out.println(req);
         String line;
+        boolean success = false;
         while ((line = in.readLine()) != null) {
-            if ("END".equals(line))
-                break;
+            if ("END".equals(line)) break;
             if (line.contains("successful")) {
                 System.out.println(line);
-                return true;
+                success = true;
+            } else {
+                System.out.println(line);
             }
         }
-        return false;
+        return success;
     }
 }

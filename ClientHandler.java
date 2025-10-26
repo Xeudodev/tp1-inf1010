@@ -14,32 +14,40 @@ class ClientHandler implements Runnable {
     @Override
     public void run() {
         try (Socket s = socket;
-                BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-                PrintWriter out = new PrintWriter(s.getOutputStream(), true)) {
+             BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+             PrintWriter out = new PrintWriter(s.getOutputStream(), true)) {
 
-            String line = in.readLine();
-            if (line == null || line.trim().isEmpty()) {
-                out.println("[ERROR] Empty request");
-                return;
-            }
-
-            line = line.trim();
-            System.out.println("[INFO] Received from " + s.getRemoteSocketAddress() + ": " + line);
-
-            String[] arguments = line.split("\\|", -1);
-            String command = arguments[0];
-            switch (command) {
-                case "getMembersFromCategory" -> handleListByCategory(arguments, out);
-                case "getTeachersByDomain" -> handleListProfessorsByDomain(arguments, out);
-                case "search" -> handleSearch(arguments, out);
-                case "add" -> handleAdd(arguments, out);
-                case "delete" -> handleDelete(arguments, out);
-                case "addRedlist" -> handleRedlist(arguments, out, true);
-                case "removeRedlist" -> handleRedlist(arguments, out, false);
-                case "auth" -> handleAuthentication(arguments, out);
-                default -> {
-                    out.println("[ERROR] Unknown command: " + command);
+            String line;
+            while ((line = in.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) {
+                    out.println("[ERROR] Empty request");
                     out.println("END");
+                    continue;
+                }
+
+                System.out.println("[INFO] Received from " + s.getRemoteSocketAddress() + ": " + line);
+
+                String[] arguments = line.split("\\|", -1);
+                String command = arguments[0];
+                switch (command) {
+                    case "getMembersFromCategory" -> handleListByCategory(arguments, out);
+                    case "getTeachersByDomain" -> handleListProfessorsByDomain(arguments, out);
+                    case "search" -> handleSearch(arguments, out);
+                    case "add" -> handleAdd(arguments, out);
+                    case "delete" -> handleDelete(arguments, out);
+                    case "addRedlist" -> handleRedlist(arguments, out, true);
+                    case "removeRedlist" -> handleRedlist(arguments, out, false);
+                    case "auth" -> handleAuthentication(arguments, out);
+                    case "QUIT" -> {
+                        out.println("[INFO] Bye");
+                        out.println("END");
+                        return;
+                    }
+                    default -> {
+                        out.println("[ERROR] Unknown command: " + command);
+                        out.println("END");
+                    }
                 }
             }
         } catch (IOException e) {
@@ -52,6 +60,7 @@ class ClientHandler implements Runnable {
         boolean isAdmin = "admin123".equals(password);
         System.out.println("[INFO] Authentication " + (isAdmin ? "successful." : "failed."));
         out.println(isAdmin ? "[INFO] Authentication successful." : "[ERROR] Authentication failed.");
+        out.println("END");
         return isAdmin;
     }
 
@@ -87,7 +96,26 @@ class ClientHandler implements Runnable {
     }
 
     private void handleListByCategory(String[] arguments, PrintWriter out) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String categoryStr = arguments[1].toUpperCase();
+        try {
+            Category category = Category.valueOf(categoryStr);
+            var repo = DirectoryRepository.getInstance();
+            var list = repo.listByCategory(category);
+            if (list.isEmpty()) {
+                out.println("[INFO] No members found.");
+            } else {
+                for (Contact contact : list) {
+                    if (repo.isRedlisted(contact)) {
+                        out.println(contact.getFirstName() + " " + contact.getLastName() + " [RED LIST]");
+                    } else {
+                        out.println(contact.toString());
+                    }
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            out.println("[ERROR] Invalid category: " + categoryStr);
+        }
+        out.println("END");
     }
 
     private void handleListProfessorsByDomain(String[] arguments, PrintWriter out) {

@@ -5,11 +5,21 @@ public class DirectoryRepository {
 
     private final List<Student> students = new ArrayList<>();
     private final List<Professor> professors = new ArrayList<>();
-    
+
+    private final Set<String> redlist = new HashSet<>();
+
     private boolean seeded = false;
 
     public static DirectoryRepository getInstance() {
         return INSTANCE;
+    }
+
+    public static String identifierOf(Contact c) {
+        if (c instanceof Student s)
+            return s.getStudentId();
+        if (c instanceof Professor p)
+            return p.getOfficePhone();
+        return null;
     }
 
     private DirectoryRepository() {
@@ -19,7 +29,7 @@ public class DirectoryRepository {
     public synchronized Contact searchByIdentifier(String ident) {
         for (Student s : students) {
             if (s.getStudentId() != null && s.getStudentId().equalsIgnoreCase(ident))
-                return s; 
+                return s;
         }
         for (Professor p : professors) {
             if (p.getOfficePhone() != null && p.getOfficePhone().equalsIgnoreCase(ident))
@@ -69,6 +79,7 @@ public class DirectoryRepository {
                 "Mathilde", "Côté", "COTM93020256",
                 "mathilde.cote@uqtr.ca", "Musique");
         addStudent(s2);
+        redlistAdd(s2.getStudentId());
 
         Student s3 = new Student(
                 "Étienne", "Courschene", "COUE15070203",
@@ -76,5 +87,31 @@ public class DirectoryRepository {
         addStudent(s3);
 
         seeded = true;
+    }
+
+    public synchronized List<Contact> listByCategory(Category category) {
+        List<Contact> out = new ArrayList<>();
+        switch (category) {
+            case STUDENT -> out.addAll(students);
+            case PROFESSOR, ASSISTANT -> out.addAll(professors);
+            default -> {
+            }
+        }
+        return out;
+    }
+
+    public synchronized boolean isRedlisted(Contact c) {
+        String id = identifierOf(c);
+        return id != null && redlist.contains(id);
+    }
+
+    public synchronized boolean redlistAdd(String id) {
+        if (searchByIdentifier(id) == null)
+            return false;
+        return redlist.add(id);
+    }
+
+    public synchronized boolean redlistRemove(String id) {
+        return redlist.remove(id);
     }
 }
