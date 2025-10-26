@@ -7,9 +7,17 @@ public class Server {
         int port = 8080;
         System.out.println("[INFO] The server is starting on port " + port);
 
+        // Seed repo
+        try {
+            DirectoryRepository.getInstance().seedUQTR();
+            System.out.println("[INFO] Repository seeded with UQTR sample data.");
+        } catch (Throwable t) {
+            System.err.println("[WARN] Failed to seed repository: " + t.getMessage());
+        }
+
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("[INFO] The server is listening on port " + port);
-
+            
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("[INFO] New client connected from: " + clientSocket.getRemoteSocketAddress());
