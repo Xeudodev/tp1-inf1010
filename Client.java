@@ -74,7 +74,9 @@ public class Client {
             try {
                 Socket s = new Socket();
                 s.connect(new InetSocketAddress(host, port), timeout);
-                System.out.println("[INFO] Connected to " + host + ":" + port + " on attempt " + i + "/" + attempts);
+                if (i > 1) {
+                    System.out.println("[INFO] Connected to " + host + ":" + port + " on attempt " + i + "/" + attempts);
+                }
                 return s;
             } catch (IOException e) {
                 System.err.println("[WARN] Connection attempt " + i + "/" + attempts + " failed: " + e.getMessage());
