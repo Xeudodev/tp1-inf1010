@@ -19,11 +19,9 @@ public class Client {
             9) Quit
             Choice: """;
 
-    private boolean isAdmin = false;
-
     public static void main(String[] args) {
 
-        Socket server = connectWithRetry(HOST, PORT, 3, 15000, 5000);
+        Socket server = connectWithRetry(HOST, PORT, 3, 15000, 3000);
         if (server == null) {
             System.err.println("[ERROR] Unable to connect to server after 3 attempts.");
             System.out.print("Press Enter to quit...");
@@ -129,6 +127,10 @@ public class Client {
     }
 
     private static void handleDelete(PrintWriter out, BufferedReader in, Scanner scanner) throws IOException {
+        if (!isAdmin(out, in, scanner)) {
+            return;
+        }
+
         String label = "Delete by student ID for student or phone number if teacher: ";
         String query = Util.prompt(scanner, label);
         sendAndPrint(out, in, "delete|" + query);
@@ -136,6 +138,10 @@ public class Client {
 
     private static void handleRedlist(PrintWriter out, BufferedReader in, Scanner scanner, boolean add)
             throws IOException {
+        if (!isAdmin(out, in, scanner)) {
+            return;
+        }
+
         String action = add ? "add" : "remove";
         String label = (add ? "Add to" : "Remove from")
                 + " red list by student ID for student or phone number if teacher: ";
@@ -144,6 +150,10 @@ public class Client {
     }
 
     private static void handleAdd(PrintWriter out, BufferedReader in, Scanner scanner) throws IOException {
+        if (!isAdmin(out, in, scanner)) {
+            return;
+        }
+
         String type = askType(scanner);
 
         if ("STUDENT".equals(type)) {
@@ -167,6 +177,9 @@ public class Client {
     }
 
     private static void handleUpdate(PrintWriter out, BufferedReader in, Scanner scanner) throws IOException {
+        if (!isAdmin(out, in, scanner)) {
+            return;
+        }
         throw new UnsupportedOperationException("Not implemented yet.");
     }
 
@@ -208,6 +221,17 @@ public class Client {
                 default -> System.out.println("[ERROR] Please enter 1 or 2.");
             }
         }
+    }
+
+    private static boolean isAdmin(PrintWriter out, BufferedReader in, Scanner scanner) throws IOException {
+        String query = Util.prompt(scanner, "Enter admin password to add a member: ");
+        boolean isAuthorized = sendAndValidate(out, in, "auth|" + query);
+
+        if (!isAuthorized) {
+            System.out.println("[ERROR] Authorization failed. Cannot add member.");
+            return false;
+        }
+        return true;
     }
 
     @SuppressWarnings("unused")
@@ -268,5 +292,19 @@ public class Client {
                 break;
         }
         System.out.println("[INFO] End of the server response");
+    }
+
+    private static boolean sendAndValidate(PrintWriter out, BufferedReader in, String req) throws IOException {
+        out.println(req);
+        String line;
+        while ((line = in.readLine()) != null) {
+            if ("END".equals(line))
+                break;
+            if (line.contains("successful")) {
+                System.out.println(line);
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -36,6 +36,7 @@ class ClientHandler implements Runnable {
                 case "delete" -> handleDelete(arguments, out);
                 case "addRedlist" -> handleRedlist(arguments, out, true);
                 case "removeRedlist" -> handleRedlist(arguments, out, false);
+                case "auth" -> handleAuthentication(arguments, out);
                 default -> {
                     out.println("[ERROR] Unknown command: " + command);
                     out.println("END");
@@ -44,6 +45,14 @@ class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.err.println("[ERROR] Client handler error: " + e.getMessage());
         }
+    }
+
+    private boolean handleAuthentication(String[] arguments, PrintWriter out) {
+        String password = arguments[1];
+        boolean isAdmin = "admin123".equals(password);
+        System.out.println("[INFO] Authentication " + (isAdmin ? "successful." : "failed."));
+        out.println(isAdmin ? "[INFO] Authentication successful." : "[ERROR] Authentication failed.");
+        return isAdmin;
     }
 
     private void handleAdd(String[] arguments, PrintWriter out) {
