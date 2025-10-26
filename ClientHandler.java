@@ -131,6 +131,32 @@ class ClientHandler implements Runnable {
     }
 
     private void handleRedlist(String[] arguments, PrintWriter out, boolean add) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String id = arguments[1];
+        var repo = DirectoryRepository.getInstance();
+        Contact contact = repo.searchByIdentifier(id);
+
+        if (contact == null) {
+            out.println("[ERROR] Member not found: " + id);
+            out.println("END");
+            return;
+        }
+
+        boolean isRedlisted = repo.isRedlisted(contact);
+        if (add) {
+            if (isRedlisted) {
+                out.println("[WARN] Member is already on the redlist.");
+            } else {
+                boolean operationSucceeded = repo.redlistAdd(id);
+                out.println(operationSucceeded ? "[INFO] Member added to the redlist." : "[ERROR] Failed to add to the redlist.");
+            }
+        } else {
+            if (!isRedlisted) {
+                out.println("[WARN] Member is not on the redlist.");
+            } else {
+                boolean operationSucceeded = repo.redlistRemove(id);
+                out.println(operationSucceeded ? "[INFO] Member removed from the redlist." : "[ERROR] Failed to remove from the redlist.");
+            }
+        }
+        out.println("END");
     }
 }
