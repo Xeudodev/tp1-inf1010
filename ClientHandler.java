@@ -119,7 +119,21 @@ class ClientHandler implements Runnable {
     }
 
     private void handleListProfessorsByDomain(String[] arguments, PrintWriter out) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String domain = arguments[1].trim();
+        var repo = DirectoryRepository.getInstance();
+        var list = repo.listProfessorsByDomain(domain);
+        if (list.isEmpty()) {
+            out.println("[INFO] No professors or assistants found in domain: " + domain);
+        } else {
+            for (Professor p : list) {
+                if (repo.isRedlisted(p)) {
+                    out.println(p.getFirstName() + " " + p.getLastName() + " [RED LIST]");
+                } else {
+                    out.println(p.toString());
+                }
+            }
+        }
+        out.println("END");
     }
 
     private void handleSearch(String[] arguments, PrintWriter out) {

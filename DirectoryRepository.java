@@ -70,6 +70,12 @@ public class DirectoryRepository {
                 "francine.rousseau@uqtr.ca", "8198874447", "Informatique");
         addProfessor(t2);
 
+        Professor t3 = new Professor(
+                "Roger", "Dufour", Category.PROFESSOR,
+                "roger.dufour@uqtr.ca", "819444444", "Informatique");
+        addProfessor(t3);
+        redlistAdd(t3.getOfficePhone());
+
         Student s1 = new Student(
                 "William", "Beaudoin", "BEAW92070107",
                 "william.beaudoin@uqtr.ca", "Informatique");
@@ -122,5 +128,16 @@ public class DirectoryRepository {
 
     public synchronized boolean redlistRemove(String id) {
         return redlist.remove(id);
+    }
+
+    public synchronized List<Professor> listProfessorsByDomain(String domain) {
+        List<Professor> out = new ArrayList<>();
+        for (Professor p : professors) {
+            String d = p.getDomain();
+            if (d != null && d.equalsIgnoreCase(domain.trim())) {
+                out.add(p);
+            }
+        }
+        return out;
     }
 }
